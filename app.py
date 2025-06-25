@@ -269,21 +269,3 @@ elif authentication_status:
         
         styled_df = display_df.style.apply(highlight_probability, axis=1)
         st.dataframe(styled_df, use_container_width=True, height=400)
-        
-        # 上位確率企業のハイライト表示
-        st.subheader("📊 参加確率上位企業")
-        top_companies = results_df[results_df['確率数値'] > 0].head(10)
-        if len(top_companies) > 0:
-            for i, row in top_companies.iterrows():
-                col1, col2, col3 = st.columns([3, 2, 2])
-                with col1:
-                    st.write(f"**{row['企業名']}**")
-                with col2:
-                    st.write(f"{row['予測']} ({row['確率レベル']})")
-                with col3:
-                    st.write(f"**{row['参加確率']}**")
-        else:
-            st.write("有効な予測結果がありません。")
-        
-        # 詳細分析用のデータをセッション状態に保存（必要に応じて）
-        st.session_state['prediction_results'] = results_df
