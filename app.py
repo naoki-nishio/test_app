@@ -14,39 +14,34 @@ st.set_page_config(
     page_icon="🏗️"
 )
 
-# 認証設定
-names = ['顧客A', '顧客B', 'admin']
-usernames = ['customer_a', 'customer_b', 'admin']
+# 認証設定（Streamlit Secretsから読み込み）
+def setup_authentication():
+    """Streamlit Secretsから認証情報を安全に読み込み"""
+    try:
+        # Streamlit Secretsから認証情報を取得
+        credentials = dict(st.secrets["credentials"])
+        
+        authenticator = stauth.Authenticate(
+            credentials,
+            st.secrets["auth"]["cookie_name"],
+            st.secrets["auth"]["cookie_key"], 
+            cookie_expiry_days=st.secrets["auth"]["cookie_expiry_days"]
+        )
+        
+        return authenticator
+    except KeyError as e:
+        st.error(f"認証設定エラー: {e}")
+        st.error("管理者に連絡してください")
+        return None
+    except Exception as e:
+        st.error(f"認証システムエラー: {e}")
+        return None
 
-# パスワードをハッシュ化（実際の運用では事前に生成）
-passwords = ['password123', 'customer456', 'admin789']
-hashed_passwords = stauth.Hasher(passwords).generate()
+# 認証処理
+authenticator = setup_authentication()
+if authenticator is None:
+    st.stop()
 
-credentials = {
-    'usernames': {
-        usernames[0]: {
-            'name': names[0],
-            'password': hashed_passwords[0]
-        },
-        usernames[1]: {
-            'name': names[1], 
-            'password': hashed_passwords[1]
-        },
-        usernames[2]: {
-            'name': names[2],
-            'password': hashed_passwords[2]
-        }
-    }
-}
-
-authenticator = stauth.Authenticate(
-    credentials,
-    'some_cookie_name',
-    'some_signature_key',
-    cookie_expiry_days=30
-)
-
-# ログイン処理
 name, authentication_status, username = authenticator.login('ログイン', 'main')
 
 if authentication_status == False:
@@ -63,9 +58,9 @@ elif authentication_status:
     # タイトル
     st.title("🏗️ 入札参加予測システム")
     
-    # モデルフォルダのパス（本番環境では相対パスに変更）
-    MODEL_FOLDER = "models_2"  # 相対パスに変更
-    DATA_PATH = "入札データ_処理済み.csv"  # 相対パスに変更
+    # モデルフォルダのパス（相対パスに変更）
+    MODEL_FOLDER = "models_2"
+    DATA_PATH = "入札データ_処理済み.csv"
     
     # 対象企業リスト
     target_companies = [
