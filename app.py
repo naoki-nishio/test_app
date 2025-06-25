@@ -114,11 +114,6 @@ elif authentication_status:
         model_filename = f"{company_name.replace('/', '_').replace('（', '(').replace('）', ')')}_smote_xgboost.pkl"
         model_path = os.path.join(MODEL_FOLDER, model_filename)
         
-        # デバッグ情報
-        st.write(f"企業: {company_name}")
-        st.write(f"ファイル名: {model_filename}")
-        st.write(f"存在確認: {os.path.exists(model_path)}")
-        
         if not os.path.exists(model_path):
             return None
         
@@ -126,8 +121,7 @@ elif authentication_status:
             with open(model_path, 'rb') as f:
                 model = pickle.load(f)
             return model
-        except Exception as e:
-            st.write(f"エラー: {e}")
+        except:
             return None
 
     def create_feature_vector(bidding_method, agency, location, qualification_score, 
