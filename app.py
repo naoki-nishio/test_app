@@ -92,41 +92,21 @@ elif authentication_status:
 
     @st.cache_data
     def load_encoders():
-        """実際のデータからエンコーダーを作成"""
+        """事前学習済みエンコーダーを読み込み"""
         try:
-            df = pd.read_csv(DATA_PATH)
-            df = df.drop(columns=['No'], errors='ignore')
-            df.fillna('', inplace=True)
+            # エンコーダーファイルを読み込み
+            with open(os.path.join(MODEL_FOLDER, 'mlb_type.pkl'), 'rb') as f:
+                mlb_type = pickle.load(f)
             
-            def clean_numeric_column(series):
-                def convert_to_numeric(x):
-                    if pd.isna(x) or x == '' or x == '非公開' or x == '事後公開':
-                        return 0
-                    try:
-                        if isinstance(x, str):
-                            x = x.replace(',', '').replace('円', '')
-                        return float(x)
-                    except (ValueError, TypeError):
-                        return 0
-                return series.apply(convert_to_numeric)
+            with open(os.path.join(MODEL_FOLDER, 'mlb_summary.pkl'), 'rb') as f:
+                mlb_summary = pickle.load(f)
             
-            df['資格点数'] = clean_numeric_column(df['資格点数'])
-            df['予定価格（税抜）'] = clean_numeric_column(df['予定価格（税抜）'])
-            df['工種リスト'] = df['工種（業種）'].apply(lambda x: str(x).split('・'))
-            df['工事概要リスト'] = df['工事概要（業務概要）'].apply(lambda x: str(x).split())
-            
-            mlb_type = MultiLabelBinarizer()
-            mlb_type.fit(df['工種リスト'])
-            
-            mlb_summary = MultiLabelBinarizer()
-            mlb_summary.fit(df['工事概要リスト'])
-            
-            ohe = OneHotEncoder(sparse_output=False, handle_unknown='ignore')
-            ohe.fit(df[['入札方式', '発注機関', '工事場所']])
+            with open(os.path.join(MODEL_FOLDER, 'ohe.pkl'), 'rb') as f:
+                ohe = pickle.load(f)
             
             return mlb_type, mlb_summary, ohe
         except Exception as e:
-            st.error(f"データ読み込みエラー: {e}")
+            st.error(f"エンコーダー読み込みエラー: {e}")
             return None, None, None
 
     def load_company_model(company_name):
