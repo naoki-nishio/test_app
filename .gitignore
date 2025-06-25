@@ -1,0 +1,38 @@
+cat > .gitignore << 'EOF'
+# 機密情報（絶対にアップロードしない）
+.streamlit/secrets.toml
+.streamlit/config.toml
+.env
+*.key
+*.pem
+config.ini
+passwords.txt
+credentials.json
+
+# 大容量ファイル（必要に応じてコメントアウト）
+# *.pkl
+# *.csv
+
+# Python関連
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+
+# 仮想環境
+venv/
+env/
+.venv/
+
+# システムファイル
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+
+# エディタ設定
+.vscode/
+.idea/
+EOF
