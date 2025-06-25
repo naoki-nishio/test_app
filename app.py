@@ -207,7 +207,8 @@ elif authentication_status:
                     predictions.append({
                         '企業名': company,
                         '予測': prediction_result,
-                        '確率': prob_level,
+                        '確率レベル': prob_level,
+                        '参加確率': f"{probability:.1%}",  # パーセンテージ表示
                         'ソートキー': sort_key,
                         '確率数値': probability
                     })
@@ -215,7 +216,8 @@ elif authentication_status:
                     predictions.append({
                         '企業名': company,
                         '予測': 'エラー',
-                        '確率': '-',
+                        '確率レベル': '-',
+                        '参加確率': '-',
                         'ソートキー': -1,
                         '確率数値': 0
                     })
@@ -223,33 +225,65 @@ elif authentication_status:
                 predictions.append({
                     '企業名': company,
                     '予測': 'モデルなし',
-                    '確率': '-',
+                    '確率レベル': '-',
+                    '参加確率': '-',
                     'ソートキー': -1,
                     '確率数値': 0
                 })
         
-        # 結果表示
+        # 結果表示（確率数値でソート）
         results_df = pd.DataFrame(predictions)
-        results_df = results_df.sort_values('ソートキー', ascending=False)
+        results_df = results_df.sort_values('確率数値', ascending=False)
         
         st.header("予測結果")
         
         # サマリー
         participating = results_df[results_df['予測'] == '参加']
-        high_prob = results_df[results_df['確率'] == '高']
-        medium_prob = results_df[results_df['確率'] == '中']
-        low_prob = results_df[results_df['確率'] == '低']
+        high_prob = results_df[results_df['確率レベル'] == '高']
+        medium_prob = results_df[results_df['確率レベル'] == '中']
+        low_prob = results_df[results_df['確率レベル'] == '低']
         
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.metric("参加予測企業数", len(participating))
         with col2:
-            st.metric("確率高", len(high_prob))
+            st.metric("確率高 (75%以上)", len(high_prob))
         with col3:
-            st.metric("確率中", len(medium_prob))
+            st.metric("確率中 (50-75%)", len(medium_prob))
         with col4:
-            st.metric("確率低", len(low_prob))
+            st.metric("確率低 (50%未満)", len(low_prob))
         
-        # 結果テーブル
-        display_df = results_df[['企業名', '予測', '確率']].copy()
-        st.dataframe(display_df, use_container_width=True, height=400)
+        # 結果テーブル（確率数値を含む）
+        display_df = results_df[['企業名', '予測', '確率レベル', '参加確率']].copy()
+        
+        # スタイリングを適用（確率が高い順に色分け）
+        def highlight_probability(row):
+            if row['確率レベル'] == '高':
+                return ['background-color: #ffebee'] * len(row)
+            elif row['確率レベル'] == '中':
+                return ['background-color: #fff3e0'] * len(row)
+            elif row['確率レベル'] == '低':
+                return ['background-color: #f3e5f5'] * len(row)
+            else:
+                return [''] * len(row)
+        
+        styled_df = display_df.style.apply(highlight_probability, axis=1)
+        st.dataframe(styled_df, use_container_width=True, height=400)
+        
+        # 上位確率企業のハイライト表示
+        st.subheader("📊 参加確率上位企業")
+        top_companies = results_df[results_df['確率数値'] > 0].head(10)
+        if len(top_companies) > 0:
+            for i, row in top_companies.iterrows():
+                col1, col2, col3 = st.columns([3, 2, 2])
+                with col1:
+                    st.write(f"**{row['企業名']}**")
+                with col2:
+                    st.write(f"{row['予測']} ({row['確率レベル']})")
+                with col3:
+                    st.write(f"**{row['参加確率']}**")
+        else:
+            st.write("有効な予測結果がありません。")
+        
+        # 詳細分析用のデータをセッション状態に保存（必要に応じて）
+        st.session_state['prediction_results'] = results_df
